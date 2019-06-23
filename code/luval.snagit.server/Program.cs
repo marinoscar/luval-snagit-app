@@ -1,11 +1,11 @@
-﻿using System;
+﻿using luval.snagit.core;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace luval.snagit.server
 {
@@ -15,34 +15,27 @@ namespace luval.snagit.server
         private static string _variable = "START";
         static void Main(string[] args)
         {
-            StartServer();
-            Task.Delay(1000).Wait();
-
-
-            //Client
-            //var client = new NamedPipeClientStream(_pipeName);
-            //client.Connect();
-            //var reader = new StreamReader(client);
-            while(_variable != "END")
+            var snag = new SnagIt();
+            snag.StartRecording();
+            var stream = new Server().Start(_pipeName);
+            Thread.Sleep(5000);
+            while (true)
             {
+
+                var line = stream.ReadLine();
+                _variable = line;
+                Console.WriteLine("Recieved: {0}", _variable);
                 Thread.Sleep(1000);
-            }
-        }
-
-        static void StartServer()
-        {
-            Task.Factory.StartNew(() =>
-            {
-                var server = new NamedPipeServerStream(_pipeName);
-                server.WaitForConnection();
-                var reader = new StreamReader(server);
-                while (true)
+                if(line == "STOP")
                 {
-                    var line = reader.ReadLine();
-                    _variable = line;
-                    Console.WriteLine("Recieved: {0}", _variable);
+                    snag.StopRecording();
                 }
-            });
+                var duration = DateTime.UtcNow.Subtract(snag.UtcRecordStartTime).TotalMinutes;
+                if(duration > 5)
+                {
+                    snag.StopRecording();
+                }
+            }
         }
     }
 }

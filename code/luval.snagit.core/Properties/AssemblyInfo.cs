@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("luval.snagit.app")]
+[assembly: AssemblyTitle("luval.snagit.core")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("luval.snagit.app")]
+[assembly: AssemblyProduct("luval.snagit.core")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("2ae93a69-b7bf-4051-804e-199d7688b655")]
+[assembly: Guid("389b4e3d-5d1d-4a0d-80cc-7854bce85309")]
 
 // Version information for an assembly consists of the following four values:
 //
