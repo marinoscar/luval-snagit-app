@@ -4,6 +4,9 @@ using System.Text;
 using SNAGITLib;
 using System.Windows.Forms;
 using System.Threading;
+using System.Diagnostics;
+using Microsoft.Win32;
+using System.Drawing;
 
 namespace luval.snagit.core
 {
@@ -18,24 +21,41 @@ namespace luval.snagit.core
             snagVideo = new SNAGITLib.VideoCaptureClass();
         }
 
+        private void Initialize()
+        {
+            SetParameters();
+            HookEvents();
+        }
+
         private void SetParameters()
         {
+            snagVideo.Input = SNAGITLib.snagVideoInput.sviRegion;
             snagVideo.InputRegionOptions.SelectionMethod = snagRegionSelectionMethod.srsmFixed;
-            snagVideo.InputRegionOptions.Height = Convert.ToInt16(SystemInformation.VirtualScreen.Height);
-            snagVideo.InputRegionOptions.Width = Convert.ToInt16(SystemInformation.VirtualScreen.Width);
+
+            float dpiX, dpiY;
+
+            using (Graphics graphics = Graphics.FromHwnd(IntPtr.Zero))
+            {
+                dpiX = 96f / graphics.DpiX;
+                dpiY = 96f / graphics.DpiY;
+            };
+
+            snagVideo.InputRegionOptions.Height = Convert.ToInt16(Screen.PrimaryScreen.WorkingArea.Height * dpiY);
+            snagVideo.InputRegionOptions.Width = Convert.ToInt16(Screen.PrimaryScreen.WorkingArea.Width * dpiX);
+
+
+
             snagVideo.InputRegionOptions.StartX = 0;
             snagVideo.InputRegionOptions.StartY = 0;
-            snagVideo.InputRegionOptions.UseStartPosition = false;
+            snagVideo.InputRegionOptions.UseStartPosition = true;
 
             snagVideo.UseMagnifierWindow = false;
             snagVideo.IncludeCursor = false;
             snagVideo.EnablePreviewWindow = false;
             snagVideo.HideRecordingUI = true;
 
-            snagVideo.ForegroundPreview = true;
-            //snagVideo.MuteMic = true;
-            snagVideo.ShowVideoCountdown = false;
-            
+
+
 
             SNAGITLib.MP4FormatClass mp4Format = new SNAGITLib.MP4FormatClass()
             {
@@ -48,13 +68,28 @@ namespace luval.snagit.core
             snagVideo.OutputVideoFile.Filename = "SNAG-CAPTURE";
             snagVideo.OutputVideoFile.AutoFilePrefix = "SNAG-CAPTURE";
             snagVideo.OutputVideoFile.AutoNumPrefixDigits = 10;
-
         }
 
+        private void HookEvents()
+        {
+            snagVideo.OnRecorderStateChange += SnagVideo_OnRecorderStateChange;
+            snagVideo.OnSelectedRecordingRegion += SnagVideo_OnSelectedRecordingRegion;
+        }
+
+        private void SnagVideo_OnSelectedRecordingRegion(int xOffset, int yOffset, int rectWidth, int rectHeight)
+        {
+            Debug.WriteLine(string.Format("Region: {0},{1},{2}, {3}", xOffset, yOffset, rectHeight, rectWidth));
+        }
+
+        private void SnagVideo_OnRecorderStateChange(snagRecorderState newState)
+        {
+            Debug.WriteLine(string.Format("OnRecorderStateChange: {0}", newState));
+        }
 
         public void StartRecording()
         {
-            SetParameters();
+            Initialize();
+            SelectFullScreen();
             UtcRecordStartTime = DateTime.UtcNow;
             var StartThread = new Thread(new ThreadStart(() => StartThreadWorker()));
             StartThread.Start();
@@ -66,13 +101,26 @@ namespace luval.snagit.core
             StopThread.Start();
         }
 
+        public void SelectFullScreen()
+        {
+            var FullScreenThread = new Thread(new ThreadStart(() => SelectFullScreenThread()));
+            FullScreenThread.Start();
+        }
+
+        public void SelectFullScreenThread()
+        {
+            Thread.Sleep(4000);
+            try { SendKeys.Send("F"); } catch { }
+            Debug.WriteLine("Send Key F");
+        }
+
         private void StopThreadWorker()
         {
             try
             {
                 snagVideo.Stop();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception(string.Format("Error stopping recording: {0}", snagVideo.LastRecorderError), ex);
             }
@@ -84,7 +132,7 @@ namespace luval.snagit.core
             {
                 snagVideo.Start();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception(string.Format("Error starting recording: {0}", snagVideo.LastRecorderError), ex);
             }
